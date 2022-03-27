@@ -1,5 +1,5 @@
 """
-Chess Assignment - Q learning
+Chess Assignment - Sarsa
 Training Python Script
 """
 
@@ -68,37 +68,48 @@ def main():
         i = 1                                    ## COUNTER FOR NUMBER OF ACTIONS
         
         """
-        Q-Learning Algorithm
+        Sarsa Algorithm
         1. Initialize S, X, ALLOWED_A
         """
         S,X,allowed_a=env.Initialise_game()      ## INITIALISE GAME
-
+        
+        """
+        Sarsa Algorithm
+        2. CHOOSE A_AGENT FROM S USING POLICY DERIVED FROM Q (EPSILON-GREEDY)
+        """
+        Qvalues, a_h = CalQvalues(X,W1,W2,b1,b2)
+        a_agent, _ = EpsilonGreedy_Policy(Qvalues, allowed_a, epsilon_f)
+        
+        """
+        Q-Learning Algorithm
+            Loop for each episode
+        """
         while Done==0:                        ## START THE EPISODE
             """
-            Q-Learning Algorithm
-            2. CHOOSE A_AGENT FROM S USING POLICY DERIVED FROM Q (EPSILON-GREEDY)
-            """
-            Qvalues, a_h = CalQvalues(X,W1,W2,b1,b2)
-            a_agent, _ = EpsilonGreedy_Policy(Qvalues, allowed_a, epsilon_f)
-            """
-            Q-Learning Algorithm
+            Sarsa Algorithm
             3. TAKE ACTION A_AGENT, OBSERVE R, S_NEXT
             """
             S_next,X_next,allowed_a_next,R,Done=env.OneStep(a_agent)
+            
             """
             If the game is Done(Checkmate, Draw),
             Update the parameters of Neural Network lastly.
             """        
             if Done==1:
+
                 # Back Propagation with ADAM Optimization
+                # NOT CONSIDER X_NEXT
+
                 # Compute the error signal
                 e_n = np.zeros(np.shape(Qvalues))
                 e_n[a_agent] = R-Qvalues[a_agent]
+
                 # Backpropagation: output layer -> hidden layer
                 # Activation Function : ReLu(Reactified Linear Function)
                 delta2 = e_n
                 dW2 = np.outer(delta2, a_h)
                 db2 = delta2
+
                 # Backpropagation: hidden layer -> input layer
                 # Activation Function : ReLu(Reactified Linear Function)
                 delta1 = np.dot(W2.T, delta2)
@@ -111,23 +122,33 @@ def main():
                 b1 += eta*Adam_b1.Compute(db1)
                 
                 break
+        
+            # IF THE EPISODE IS NOT OVER...
             else:
+                
                 ## ONLY TO PUT SUMETHING
                 PIPPO=1
             """
-            Q-Learning Algorithm
-            4. UPDATE Q VALUES
+            Sarsa Algorithm
+            4. CHOOSE A_AGENT_NEXT FROM S_NEXT USING POLICY DERIVED FROM Q (EPSILON-GREEDY)
             """
-            # Compute the delta of Q-learning
-            e_n = np.zeros(np.shape(Qvalues))
             Qvalues_next, a_h = CalQvalues(X_next,W1,W2,b1,b2)
-            a_agent_next, _ = EpsilonGreedy_Policy(Qvalues_next, allowed_a_next, 0) # Select the greedy action
+            a_agent_next, _ = EpsilonGreedy_Policy(Qvalues_next, allowed_a_next, epsilon_f)
+
+            """
+            Sarsa Algorithm
+            5. UPDATE Q VALUES
+            """
+            # Compute the delta of Sarsa
+            e_n = np.zeros(np.shape(Qvalues))
             e_n[a_agent] = R+gamma*Qvalues_next[a_agent_next]-Qvalues[a_agent]
+            
             # Backpropagation: output layer -> hidden layer
             # Activation Function : ReLu(Reactified Linear Function)
             delta2 = e_n
             dW2 = np.outer(delta2, a_h)
             db2 = delta2
+
             # Backpropagation: hidden layer -> input layer
             # Activation Function : ReLu(Reactified Linear Function)
             delta1 = np.dot(W2.T, delta2)
@@ -141,11 +162,12 @@ def main():
 
             """
             Q-Learning Algorithm
-            5. UPDATE S, X, ALLOWED_A
+            6. UPDATE S, X, A_AGENT
             """  
             S=np.copy(S_next)
             X=np.copy(X_next)
-            allowed_a=np.copy(allowed_a_next)
+            Qvalues, a_h = CalQvalues(X,W1,W2,b1,b2)
+            a_agent=a_agent_next
 
             i += 1  # UPDATE COUNTER FOR NUMBER OF ACTIONS
 
@@ -176,10 +198,10 @@ def main():
     """
     SAVE RESULT
     """
-    np.savetxt("Q_Episode",Episode_save)
-    np.savetxt("Q_R_Save",R_save)
-    np.savetxt("Q_N_moves_save",N_moves_save)
-    file = open("Q_FinalModel.pkl","wb")
+    np.savetxt("S_Episode",Episode_save)
+    np.savetxt("S_R_Save",R_save)
+    np.savetxt("S_N_moves_save",N_moves_save)
+    file = open("S_FinalModel.pkl","wb")
     pickle.dump(FinalModel_save, file)
     file.close()
 
