@@ -12,9 +12,13 @@ from degree_freedom_king2 import *
 from generate_game import *
 from Chess_env import *
 from RL_library import *
-
+import click
 
 size_board = 4
+
+@click.command()
+@click.option('--g', type=float, default = 0.85)
+@click.option('--b', type=float, default = 0.00005)
 
 def main():
 
@@ -44,8 +48,8 @@ def main():
 
     ## INITIALISE HYPERPARAMETERS
     epsilon_0 = 0.2     # STARTING VALUE OF EPSILON FOR THE EPSILON-GREEDY POLICY
-    beta = 0.00005      # THE PARAMETER SETS HOW QUICKLY THE VALUE OF EPSILON IS DECAYING (SEE epsilon_f BELOW)
-    gamma = 0.85        # THE DISCOUNT FACTOR
+    beta = b            # THE PARAMETER SETS HOW QUICKLY THE VALUE OF EPSILON IS DECAYING (SEE epsilon_f BELOW)
+    gamma = g           # THE DISCOUNT FACTOR
     eta = 0.0035        # THE LEARNING RATE
 
     """
@@ -177,7 +181,7 @@ def main():
     SAVE RESULT
     """
     np.savetxt("Q_Episode",Episode_save)
-    np.savetxt("Q_R_Save",R_save)
+    np.savetxt("Q_R_save",R_save)
     np.savetxt("Q_N_moves_save",N_moves_save)
     file = open("Q_FinalModel.pkl","wb")
     pickle.dump(FinalModel_save, file)

@@ -1,4 +1,6 @@
-import numpy as np;
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from degree_freedom_queen import *
 from degree_freedom_king1 import *
 from degree_freedom_king2 import *
@@ -75,8 +77,6 @@ def EpsilonGreedy_Policy(Qvalues, allowed_a, epsilon, verbose=False):
 
     return (a_agent, a)
 
-
-
 def CalQvalues(X, W1, W2, b1, b2):
     """
     Calculate Q Values of status X in Neural Network.
@@ -132,3 +132,18 @@ def PerformanceCheck(env,W1,W2,b1,b2,T):
     N_moves_perf = np.mean(N_moves_save)
 
     return R_perf, N_moves_perf
+
+
+
+def PlotEWM(Data,Episode,xlabel,ylabel,title):
+    data = pd.DataFrame(Data)
+    ema = data.ewm(span=100, adjust=False).mean()
+    
+    # Comparison plot b/w stock values & EMA
+    plt.scatter(Episode,list(data[0]), label="Data", s=1)
+    plt.plot(Episode,list(ema[0]), label="EWM", color = 'r')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
+    plt.show()
