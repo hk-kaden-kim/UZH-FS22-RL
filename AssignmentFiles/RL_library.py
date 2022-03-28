@@ -135,15 +135,18 @@ def PerformanceCheck(env,W1,W2,b1,b2,T):
 
 
 
-def PlotEWM(Data,Episode,xlabel,ylabel,title):
+def EWM(Data,Episode,xlabel,ylabel,title,plot=False):
     data = pd.DataFrame(Data)
     ema = data.ewm(span=100, adjust=False).mean()
     
-    # Comparison plot b/w stock values & EMA
-    plt.scatter(Episode,list(data[0]), label="Data", s=1)
-    plt.plot(Episode,list(ema[0]), label="EWM", color = 'r')
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend()
-    plt.show()
+    if plot:
+        # Comparison plot b/w stock values & EMA
+        plt.scatter(Episode,list(data[0]), label="Data", s=1)
+        plt.plot(Episode,list(ema[0]), label="EWM", color = 'r')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.show()
+    return data,ema
+
