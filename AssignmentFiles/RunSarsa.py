@@ -1,16 +1,20 @@
 """
 Chess Assignment - Sarsa
-Training Python Script
+Python Script for REINFORCEMENT training
 """
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
 
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-from degree_freedom_queen import *
-from degree_freedom_king1 import *
-from degree_freedom_king2 import *
-from generate_game import *
-from Chess_env import *
+from ChessEnvironment.degree_freedom_queen import *
+from ChessEnvironment.degree_freedom_king1 import *
+from ChessEnvironment.degree_freedom_king2 import *
+from ChessEnvironment.generate_game import *
+from ChessEnvironment.Chess_env import *
 from RL_library import *
 import click
 
@@ -45,6 +49,7 @@ def main(g,b):
     Adam_b1 = Adam(b1, beta1)
     Adam_W2 = Adam(W2, beta1)
     Adam_b2 = Adam(b2, beta1)
+    AdamObj = [Adam_W2,Adam_W1,Adam_b2,Adam_b1]
 
     ## INITIALISE HYPERPARAMETERS
     epsilon_0 = 0.2      # STARTING VALUE OF EPSILON FOR THE EPSILON-GREEDY POLICY
@@ -52,10 +57,12 @@ def main(g,b):
     gamma = g            # THE DISCOUNT FACTOR
     eta = 0.0035         # THE LEARNING RATE
     print("gamma: ", gamma, "beta: ", beta)
+
+
     """ 
-    TRAINING
+    TRAINING START - SARSA Algorithm
     """
-    N_episodes = 20 #100000 # THE NUMBER OF GAMES TO BE PLAYED 
+    N_episodes = 5000 #100000 # THE NUMBER OF GAMES TO BE PLAYED 
     N_perfCheck = 10 #Check the performance every N_perfCheck episodes
 
     # SAVING VARIABLES
@@ -72,25 +79,21 @@ def main(g,b):
         i = 1                                    ## COUNTER FOR NUMBER OF ACTIONS
         
         """
-        Sarsa Algorithm
         1. Initialize S, X, ALLOWED_A
         """
         S,X,allowed_a=env.Initialise_game()      ## INITIALISE GAME
         
         """
-        Sarsa Algorithm
         2. CHOOSE A_AGENT FROM S USING POLICY DERIVED FROM Q (EPSILON-GREEDY)
         """
         Qvalues, a_h = CalQvalues(X,W1,W2,b1,b2)
         a_agent, _ = EpsilonGreedy_Policy(Qvalues, allowed_a, epsilon_f)
         
         """
-        Q-Learning Algorithm
-            Loop for each episode
+        Loop for each episode
         """
         while Done==0:                        ## START THE EPISODE
             """
-            Sarsa Algorithm
             3. TAKE ACTION A_AGENT, OBSERVE R, S_NEXT
             """
             S_next,X_next,allowed_a_next,R,Done=env.OneStep(a_agent)
@@ -103,27 +106,8 @@ def main(g,b):
 
                 # Back Propagation with ADAM Optimization
                 # NOT CONSIDER X_NEXT
-
-                # Compute the error signal
-                e_n = np.zeros(np.shape(Qvalues))
-                e_n[a_agent] = R-Qvalues[a_agent]
-
-                # Backpropagation: output layer -> hidden layer
-                # Activation Function : ReLu(Reactified Linear Function)
-                delta2 = e_n
-                dW2 = np.outer(delta2, a_h)
-                db2 = delta2
-
-                # Backpropagation: hidden layer -> input layer
-                # Activation Function : ReLu(Reactified Linear Function)
-                delta1 = np.dot(W2.T, delta2)
-                dW1 = np.outer(delta1,X)
-                db1 = delta1
-
-                W2 += eta*Adam_W2.Compute(dW2)
-                W1 += eta*Adam_W1.Compute(dW1)
-                b2 += eta*Adam_b2.Compute(db2)
-                b1 += eta*Adam_b1.Compute(db1)
+                W2,W1,b2,b1 = BackProp(W2,W1,b2,b1,X,a_h,R,Qvalues,a_agent,AdamObj,gamma,eta,
+                                        gameDone = True)
                 
                 break
         
@@ -132,6 +116,7 @@ def main(g,b):
                 
                 ## ONLY TO PUT SUMETHING
                 PIPPO=1
+            
             """
             Sarsa Algorithm
             4. CHOOSE A_AGENT_NEXT FROM S_NEXT USING POLICY DERIVED FROM Q (EPSILON-GREEDY)
@@ -142,30 +127,12 @@ def main(g,b):
             """
             Sarsa Algorithm
             5. UPDATE Q VALUES
+                - UPDATE Parameters of neural network using Back Propagation Method.
             """
-            # Compute the delta of Sarsa
-            e_n = np.zeros(np.shape(Qvalues))
-            e_n[a_agent] = R+gamma*Qvalues_next[a_agent_next]-Qvalues[a_agent]
-            
-            # Backpropagation: output layer -> hidden layer
-            # Activation Function : ReLu(Reactified Linear Function)
-            delta2 = e_n
-            dW2 = np.outer(delta2, a_h)
-            db2 = delta2
-
-            # Backpropagation: hidden layer -> input layer
-            # Activation Function : ReLu(Reactified Linear Function)
-            delta1 = np.dot(W2.T, delta2)
-            dW1 = np.outer(delta1,X)
-            db1 = delta1
-
-            W2 += eta*Adam_W2.Compute(dW2)
-            W1 += eta*Adam_W1.Compute(dW1)
-            b2 += eta*Adam_b2.Compute(db2)
-            b1 += eta*Adam_b1.Compute(db1)
+            W2,W1,b2,b1 = BackProp(W2,W1,b2,b1,X,a_h,R,Qvalues,a_agent,AdamObj,gamma,eta,
+                                    Q_next = Qvalues_next, A_next = a_agent_next)
 
             """
-            Q-Learning Algorithm
             6. UPDATE S, X, A_AGENT
             """  
             S=np.copy(S_next)
@@ -175,6 +142,11 @@ def main(g,b):
 
             i += 1  # UPDATE COUNTER FOR NUMBER OF ACTIONS
 
+        """
+        Performance Check in every N_perfCheck episodes
+        - Estimattions : Average Rewards and Average Moves per Game
+        - Trial : 100 Episodes
+        """
         if ((n+1)%N_perfCheck==0): # PERFORMANCE CHECK
             print(n+1,': Agent Performance Check, START')
             R_perf, N_moves_perf = PerformanceCheck(env,W1,W2,b1,b2,100)
@@ -188,11 +160,11 @@ def main(g,b):
             p += 1
 
     """
+    TRAINING END - SARSA Algorithm
     FINAL RESULT
     """
     R_perf, N_moves_perf = PerformanceCheck(env,W1,W2,b1,b2,100)
     print('Agent Performance Check, Average reward:',R_perf,'Number of steps: ',N_moves_perf)
-
 
     FinalModel_save['W1']=W1
     FinalModel_save['W2']=W2

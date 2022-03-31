@@ -2,10 +2,10 @@
 
 
 import numpy as np
-from degree_freedom_queen import *
-from degree_freedom_king1 import *
-from degree_freedom_king2 import *
-from generate_game import *
+from .degree_freedom_queen import *
+from .degree_freedom_king1 import *
+from .degree_freedom_king2 import *
+from .generate_game import *
 
 
 
