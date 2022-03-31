@@ -29,4 +29,3 @@ o	{SARSA: S, Qlearning: Q}_FinalModel.pkl
 -	This file save the neural network layer parameters (W, Bias) from the last episode run.
 
 d)	The result file can be opened and analyzed through TrainingDataAnalysis.ipynb
-![image](https://user-images.githubusercontent.com/91096475/161133145-4082dabc-734e-49bd-b8d3-cc6b92a8233b.png)
